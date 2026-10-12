@@ -14,13 +14,12 @@ const CONFIG = {
 
 http.createServer((req, res) => {
     res.writeHead(200);
-    res.end('Bot Online!');
+    res.end('Bot Ativo!');
 }).listen(10000);
 
 function calcularMultiplicador(serverSeed, clientSeed, nonce) {
     const combined = serverSeed + clientSeed + nonce;
     const hash = crypto.createHmac('sha256', serverSeed).update(combined).digest('hex');
-    const intValue = parseInt(hash.substring(0, 13), 16);
     const multiplier = (Math.floor(100 * Math.random() * 10) + 100) / 100; 
     return multiplier.toFixed(2);
 }
@@ -38,7 +37,13 @@ async function sendTelegram(message) {
 }
 
 async function startBot() {
-    console.log("Iniciando Minerador V2.2...");
+    console.log("Iniciando Minerador V2.3 com Ping de Vida...");
+    
+    // Inicia o Ping de Vida (Manda mensagem a cada 10 minutos)
+    setInterval(() => {
+        sendTelegram("✅ *Bot Online e Monitorando...*\n\nAguardando troca de semente do cassino para disparar o sinal.");
+    }, 600000);
+
     const browser = await puppeteer.launch({
         headless: "new",
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -49,7 +54,7 @@ async function startBot() {
 
     try {
         await page.goto(CONFIG.URL_CASSINO, { waitUntil: 'networkidle2' });
-        await sendTelegram("🚀 Bot V2.2 Online! Sincronizando com o cassino...");
+        await sendTelegram("🚀 Bot V2.3 Online! Sincronizado e monitorando em tempo real...");
 
         let lastSeed = "";
 
@@ -61,7 +66,7 @@ async function startBot() {
 
                 if (currentSeed && currentSeed !== lastSeed) {
                     lastSeed = currentSeed;
-                    await sendTelegram("🔄 Nova Semente Detectada!\n\nHash: " + currentSeed + "\n\n⏳ Calculando alvo...");
+                    await sendTelegram("🔄 *Nova Semente Detectada!*\n\nHash: `" + currentSeed + "`\n\n⏳ Calculando alvo...");
 
                     const clientSeed = "sky-net-2024";
                     const nonce = "1";
@@ -82,3 +87,4 @@ async function startBot() {
 }
 
 startBot();
+
