@@ -33,12 +33,12 @@ async function sendTelegram(message) {
             parse_mode: 'Markdown'
         });
     } catch (e) {
-        console.error("Erro Telegram:", e.message);
+        console.error("Erro Telegram: " + e.message);
     }
 }
 
 async function startBot() {
-    console.log("Iniciando Minerador de Hashes V2.1...");
+    console.log("Iniciando Minerador V2.2...");
     const browser = await puppeteer.launch({
         headless: "new",
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -49,7 +49,7 @@ async function startBot() {
 
     try {
         await page.goto(CONFIG.URL_CASSINO, { waitUntil: 'networkidle2' });
-        await sendTelegram("🚀 Bot V2.1 Online! Corrigido e buscando sementes...");
+        await sendTelegram("🚀 Bot V2.2 Online! Sincronizando com o cassino...");
 
         let lastSeed = "";
 
@@ -60,19 +60,19 @@ async function startBot() {
                 const currentSeed = hashMatch ? hashMatch[0] : null;
 
                 if (currentSeed && currentSeed !== lastSeed) {
-                    lastSeed = currentSeed) {
-                    await sendTelegram(`🔄 Nova Semente Detectada!\n\nHash: ${currentSeed}\n\n⏳ Calculando alvo...`);
+                    lastSeed = currentSeed;
+                    await sendTelegram("🔄 Nova Semente Detectada!\n\nHash: " + currentSeed + "\n\n⏳ Calculando alvo...");
 
                     const clientSeed = "sky-net-2024";
                     const nonce = "1";
                     const target = calcularMultiplicador(currentSeed, clientSeed, nonce);
 
-                    await sendTelegram(`🎯 *SINAL ENCONTRADO*\n\n🚀 Alvo: *${target}x*\n\n⚠️ Entre agora e configure o auto-saque!`);
+                    await sendTelegram("🎯 *SINAL ENCONTRADO*\n\n🚀 Alvo: *" + target + "x*\n\n⚠️ Entre agora e configure o auto-saque!");
                 }
 
                 await new Promise(resolve => setTimeout(resolve, 5000));
             } catch (e) {
-                console.log("Erro no loop de busca: " + e.message);
+                console.log("Erro no loop: " + e.message);
                 await new Promise(resolve => setTimeout(resolve, 10000));
             }
         }
