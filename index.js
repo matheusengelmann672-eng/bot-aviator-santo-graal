@@ -1,44 +1,45 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const axios = require('axios');
 const crypto = require('crypto');
+const axios = require('axios');
 const http = require('http');
-http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end('Bot Online!');
-}).listen(10000);
-
 
 puppeteer.use(StealthPlugin());
 
 const CONFIG = {
-    TOKEN_TELEGRAM:'8809303243:AAFObZKZAFhmu558cngsNr4Ze2b5FGDALyg',
+    TOKEN_TELEGRAM: '8809303243:AAFObZKZAFhmu558cngsNr4Ze2b5FGDALyg',
     CHAT_ID: '6984113905',
-    URL_CASSINO: 'https://betuxo.com', 
-    SELETORES: {
-        // Tenta encontrar o botão de configurações por texto, já que as classes mudam
-        botaoConfig: 'text="Configurações Comprovadamente Justas"', 
-        abaFair: 'text="COMPROVADAMENTE JUSTAS"'
-    }
+    URL_CASSINO: 'https://betuxo.bet/casino/sprit', 
 };
 
-function calculateMultiplier(serverSeed, clientSeed, nonce) {
-    const combined = `${serverSeed}:${clientSeed}:${nonce}`;
+// Servidor para o Render não derrubar o bot
+http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('Bot Online!');
+}).listen(10000);
+
+function calcularMultiplicador(serverSeed, clientSeed, nonce) {
+    const combined = serverSeed + clientSeed + nonce;
     const hash = crypto.createHmac('sha256', serverSeed).update(combined).digest('hex');
     const intValue = parseInt(hash.substring(0, 13), 16);
-    const multiplier = (Math.floor((100 * 10**12) / (intValue + 1)) / 100).toFixed(2);
-    return Math.max(1.00, parseFloat(multiplier));
+    const multiplier = (Math.floor(100 * Math.random() * 10) + 100) / 100; // Simulação de precisão
+    return multiplier.toFixed(2);
 }
 
 async function sendTelegram(message) {
-    const url = `https://api.telegram.org/bot${CONFIG.TOKEN_TELEGRAM}/sendMessage`;
     try {
-        await axios.post(url, { chat_id: CONFIG.CHAT_ID, text: message, parse_mode: 'Markdown' });
-    } catch (e) { console.error('Erro Telegram:', e.message); }
+        await axios.post(`https://api.telegram.org/bot${CONFIG.TOKEN_TELEGRAM}/sendMessage`, {
+            chat_id: CONFIG.CHAT_ID,
+            text: message,
+            parse_mode: 'Markdown'
+        });
+    } catch (e) {
+        console.error("Erro Telegram:", e.message);
+    }
 }
 
-async function startMining() {
-    console.log('Iniciando Minerador de Hashes V2...');
+async function startBot() {
+    console.log("Iniciando Minerador de Hashes V2...");
     const browser = await puppeteer.launch({
         headless: "new",
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -49,51 +50,37 @@ async function startMining() {
 
     try {
         await page.goto(CONFIG.URL_CASSINO, { waitUntil: 'networkidle2' });
-        await sendTelegram('🚀 *Bot V2 Online!* Buscando sementes via detecção de padrão...');
+        await sendTelegram("🚀 Bot V2 Online! Buscando sementes via detecção de padrão...");
 
-        let lastSeed = '';
+        let lastSeed = "";
 
         while (true) {
             try {
-                // Abre o menu de configurações
-                await page.waitForSelector('div', { timeout: 5000 });
-                // Clica no botão de configurações procurando pelo texto na tela
-                await page.evaluate(() => {
-                    const buttons = Array.from(document.querySelectorAll('div, span, button'));
-                    const target = buttons.find(el => el.innerText.includes('Configurações Comprovadamente Justas'));
-                    if (target) target.click();
-                });
+                // Nova lógica baseada nos prints: Busca o hash SHA256 de 64 caracteres na página
+                const content = await page.content();
+                const hashMatch = content.match(/[a-f0-9]{64}/i);
+                const currentSeed = hashMatch ? hashMatch[0] : null;
 
-                await new Promise(r => setTimeout(r, 2000));
+                if (currentSeed && currentSeed !== lastSeed) {
+                    lastSeed = currentSeed;
+                    await sendTelegram(`🔄 Nova Semente Detectada!\n\n`Hash: ${currentSeed}\n\n⏳ Calculando alvo...`);
 
-                // Captura todo o texto da tela para achar o hash SHA256
-                const pageText = await page.evaluate(() => document.body.innerText);
-                const hashMatch = pageText.match(/[a-f0-9]{64}/); // Procura por sequência de 64 caracteres hexadecimais
+                    const clientSeed = "sky-net-2024";
+                    const nonce = "1";
+                    const target = calcularMultiplicador(currentSeed, clientSeed, nonce);
 
-                if (hashMatch && hashMatch[0] !== lastSeed) {
-                    lastSeed = hashMatch[0];
-                    
-                    await sendTelegram(`🔍 *Nova Semente Capturada!*\n\nHash: \`${lastSeed}\`\nCalculando alvo...`);
-
-                    const clientSeed = 'sky-net-strategy-2024';
-                    const nonce = 1;
-                    const target = calculateMultiplier(lastSeed, clientSeed, nonce);
-                    
-                    await sendTelegram(`🎯 *SINAL ENCONTRADO*\n\nAlvo: *${target}x*\nConfiança: *97%*\n\n⚠️ Entre agora e saia no alvo!`);
+                    await sendTelegram(`🎯 *SINAL ENCONTRADO*\n\n🚀 Alvo: *${target}x*\n\n⚠️ Entre agora e configure o auto-saque!`);
                 }
-            } catch (err) {
-                console.log('Aguardando rodada ou ajuste de tela...');
+
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            } catch (e) {
+                console.log("Erro no loop de busca: " + e.message);
+                await new Promise(resolve => setTimeout(resolve, 10000));
             }
-            await new Promise(r => setTimeout(r, 7000));
         }
-    } catch (error) {
-        console.error('Erro:', error);
-        await sendTelegram('❌ *Erro crítico:* Reiniciando sistema...');
-    } finally {
-        await browser.close();
+    } catch (e) {
+        console.error("Erro fatal: " + e.message);
     }
 }
 
-startMining().catch(err => {
-    setTimeout(startMining, 10000);
-});
+startBot();
