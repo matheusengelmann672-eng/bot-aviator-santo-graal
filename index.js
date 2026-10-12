@@ -2,6 +2,12 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const axios = require('axios');
 const crypto = require('crypto');
+const http = require('http');
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('Bot Online!');
+}).listen(10000);
+
 
 puppeteer.use(StealthPlugin());
 
