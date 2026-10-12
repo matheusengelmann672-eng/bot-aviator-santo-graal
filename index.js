@@ -6,7 +6,7 @@ const crypto = require('crypto');
 puppeteer.use(StealthPlugin());
 
 const CONFIG = {
-    TOKEN_TELEGRAM: '8809303243:AAFOZbZKZAFhmu558cngsNr4Ze2b5FGDALyg',
+    TOKEN_TELEGRAM:'8809303243:AAFObZKZAFhmu558cngsNr4Ze2b5FGDALyg',
     CHAT_ID: '6984113905',
     URL_CASSINO: 'https://betuxo.com', 
     SELETORES: {
