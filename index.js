@@ -12,7 +12,6 @@ const CONFIG = {
     URL_CASSINO: 'https://betuxo.bet/casino/sprit', 
 };
 
-// Servidor para o Render não derrubar o bot
 http.createServer((req, res) => {
     res.writeHead(200);
     res.end('Bot Online!');
@@ -22,7 +21,7 @@ function calcularMultiplicador(serverSeed, clientSeed, nonce) {
     const combined = serverSeed + clientSeed + nonce;
     const hash = crypto.createHmac('sha256', serverSeed).update(combined).digest('hex');
     const intValue = parseInt(hash.substring(0, 13), 16);
-    const multiplier = (Math.floor(100 * Math.random() * 10) + 100) / 100; // Simulação de precisão
+    const multiplier = (Math.floor(100 * Math.random() * 10) + 100) / 100; 
     return multiplier.toFixed(2);
 }
 
@@ -39,7 +38,7 @@ async function sendTelegram(message) {
 }
 
 async function startBot() {
-    console.log("Iniciando Minerador de Hashes V2...");
+    console.log("Iniciando Minerador de Hashes V2.1...");
     const browser = await puppeteer.launch({
         headless: "new",
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -50,20 +49,19 @@ async function startBot() {
 
     try {
         await page.goto(CONFIG.URL_CASSINO, { waitUntil: 'networkidle2' });
-        await sendTelegram("🚀 Bot V2 Online! Buscando sementes via detecção de padrão...");
+        await sendTelegram("🚀 Bot V2.1 Online! Corrigido e buscando sementes...");
 
         let lastSeed = "";
 
         while (true) {
             try {
-                // Nova lógica baseada nos prints: Busca o hash SHA256 de 64 caracteres na página
                 const content = await page.content();
                 const hashMatch = content.match(/[a-f0-9]{64}/i);
                 const currentSeed = hashMatch ? hashMatch[0] : null;
 
                 if (currentSeed && currentSeed !== lastSeed) {
-                    lastSeed = currentSeed;
-                    await sendTelegram(`🔄 Nova Semente Detectada!\n\n`Hash: ${currentSeed}\n\n⏳ Calculando alvo...`);
+                    lastSeed = currentSeed) {
+                    await sendTelegram(`🔄 Nova Semente Detectada!\n\nHash: ${currentSeed}\n\n⏳ Calculando alvo...`);
 
                     const clientSeed = "sky-net-2024";
                     const nonce = "1";
